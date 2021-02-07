@@ -313,7 +313,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_sprites:
-  - {fileID: 2800000, guid: 36888c9f6c7f6ea49af7b9882dd9c22c, type: 3}
-  - {fileID: 2800000, guid: e16f26e525c7750478bbdb0646fe7dc5, type: 3}
-  - {fileID: 2800000, guid: 8b9923d76a03c5e4cac49d35db24136c, type: 3}
-  - {fileID: 2800000, guid: bbeaf9f9f6e0b8841b310155ff3d34e4, type: 3}
+  - {fileID: 2800000, guid: c68d55e034369044eb66e123f617fbca, type: 3}
+  - {fileID: 2800000, guid: c68d55e034369044eb66e123f617fbca, type: 3}
+  - {fileID: 2800000, guid: c68d55e034369044eb66e123f617fbca, type: 3}
+  - {fileID: 2800000, guid: c68d55e034369044eb66e123f617fbca, type: 3}
+  skin: {fileID: 11400000, guid: 070badff421fc124aa65eb3b1c90abfa, type: 2}

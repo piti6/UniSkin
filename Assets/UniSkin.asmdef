@@ -1,0 +1,16 @@
+{
+    "name": "UniSkin",
+    "rootNamespace": "",
+    "references": [
+        "Unity.CollabProxy.Editor"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
