@@ -20,7 +20,7 @@ namespace UniSkin
         [SerializeField] private GUISkin skin;
         internal GUIStyle GetStyle(string styleName)
         {
-            GUIStyle s = GUI.skin.FindStyle(styleName) ?? EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle(styleName);
+            GUIStyle s = UnityEngine.GUI.skin.FindStyle(styleName) ?? EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle(styleName);
             if (s == null)
             {
                 Debug.LogError("Missing built-in guistyle " + styleName);
@@ -31,6 +31,9 @@ namespace UniSkin
         //private SerializableTexture2D power;
         private void Start()
         {
+            UnityEngine.Debug.LogError(UnityEditorInternal.InternalEditorUtility.unityPreferencesFolder);
+            //var instance = CachedSkin.instance;
+
             //var serializableTexture2D = new SerializableTexture2D();
             //var json = JsonUtility.ToJson(serializableTexture2D);
 
@@ -130,7 +133,7 @@ namespace UniSkin
                     //prop.SetValue(null, skin);
 
                     //GUI.skin = skin;
-                    GUI.DrawTexture(d.contentRect, m_sprites[0], ScaleMode.ScaleAndCrop);
+                    UnityEngine.GUI.DrawTexture(d.contentRect, m_sprites[0], ScaleMode.ScaleAndCrop);
                     //if (!did)
                     //{
                     //    var gUISkin = ScriptableObject.CreateInstance<GUISkin>();

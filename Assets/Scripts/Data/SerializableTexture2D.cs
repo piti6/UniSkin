@@ -7,43 +7,44 @@ namespace UniSkin
     public class SerializableTexture2D : ISerializationCallbackReceiver
     {
         [SerializeField]
-        private int _id = default;
+        private string m_id = default;
         [SerializeField]
-        private int _width = default;
+        private int m_width = default;
         [SerializeField]
-        private int _height = default;
+        private int m_height = default;
         [SerializeField]
-        private byte[] _byte = default;
+        private byte[] m_byte = default;
 
-        public bool IsValid => _id != default;
+        public bool IsValid => m_id != default;
+        public string Id => m_id;
 
-        private Texture2D _texture = default;
+        private Texture2D m_texture = default;
         public Texture2D Texture
         {
             get
             {
-                if (_texture == default)
+                if (m_texture == default)
                 {
-                    _texture = new Texture2D(_width, _height);
-                    _texture.LoadImage(_byte);
+                    m_texture = new Texture2D(m_width, m_height);
+                    m_texture.LoadImage(m_byte);
                 }
 
-                return _texture;
+                return m_texture;
             }
         }
 
         public SerializableTexture2D() { }
-        public SerializableTexture2D(int id, Texture2D texture)
+        public SerializableTexture2D(string id, Texture2D texture)
         {
-            _id = id;
-            _texture = texture;
+            m_id = id;
+            m_texture = texture;
         }
 
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {
             if (IsValid)
             {
-                _byte = ImageConversion.EncodeToPNG(_texture.MakeReadable());
+                m_byte = ImageConversion.EncodeToPNG(m_texture.MakeReadable());
             }
         }
 

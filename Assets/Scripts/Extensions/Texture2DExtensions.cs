@@ -6,7 +6,7 @@ namespace UniSkin
     {
         public static Texture2D MakeReadable(this Texture2D source)
         {
-            if (source.isReadable)
+            if (source == null || source.isReadable)
             {
                 return source;
             }
@@ -17,6 +17,17 @@ namespace UniSkin
 
                 return newTexture2D;
             }
+        }
+
+        public static string ToTextureId(this Texture2D source)
+        {
+            if (source == null) return null;
+            else return $"{source.name}{source.width}{source.height}";
+        }
+
+        public static SerializableTexture2D ToSerializableTexture2D(this Texture2D source)
+        {
+            return new SerializableTexture2D(source.ToTextureId(), source);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace UniSkin
         public string Name => _name;
         public int FontSize => _fontSize;
         public FontStyle FontStyle => _fontStyle;
-        public IReadOnlyDictionary<StyleStateType, StyleState> StyleState => _styleStateDictionary ?? (_styleStateDictionary = _styleStates.ToDictionary(x => x.SkinElementState));
+        public IReadOnlyDictionary<StyleStateType, StyleState> StyleStates => _styleStateDictionary ?? (_styleStateDictionary = _styleStates.ToDictionary(x => x.StateType));
 
         private IReadOnlyDictionary<StyleStateType, StyleState> _styleStateDictionary;
 

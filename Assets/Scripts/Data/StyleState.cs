@@ -7,18 +7,26 @@ namespace UniSkin
     [Serializable]
     public class StyleState
     {
-        public StyleStateType SkinElementState => _skinElementState;
-        public int BackgroundTextureId => _backgroundTextureId;
+        public StyleStateType StateType => _stateType;
+        public string BackgroundTextureId => _backgroundTextureId;
         public Color TextColor => _textColor;
-        public IReadOnlyList<int> ScaledBackgroundTextureIds => _scaledBackgroundTextureIds;
+        public IReadOnlyList<string> ScaledBackgroundTextureIds => _scaledBackgroundTextureIds;
 
         [SerializeField]
-        private StyleStateType _skinElementState;
+        private StyleStateType _stateType;
         [SerializeField]
-        private int _backgroundTextureId;
+        private string _backgroundTextureId;
         [SerializeField]
         private Color _textColor;
         [SerializeField]
-        private int[] _scaledBackgroundTextureIds;
+        private string[] _scaledBackgroundTextureIds;
+
+        public StyleState(StyleStateType stateType, string backgroundTextureId, Color textColor, string[] scaledBackgroundTextureIds)
+        {
+            _stateType = stateType;
+            _backgroundTextureId = backgroundTextureId;
+            _textColor = textColor;
+            _scaledBackgroundTextureIds = scaledBackgroundTextureIds;
+        }
     }
 }

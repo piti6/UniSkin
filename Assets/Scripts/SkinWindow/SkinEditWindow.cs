@@ -1,215 +1,273 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
-namespace UniSkin
+namespace UniSkin.UI
 {
     internal class SkinEditWindow : EditorWindow
     {
         [MenuItem("Window/UniSkin")]
         private static void ShowWindow()
         {
-            EditorWindow.GetWindow(typeof(SkinEditWindow));
+            GetWindow(typeof(SkinEditWindow));
         }
 
-        private GUIView m_Inspected;
-        private EditorWindow m_InspectedEditorWindow;
-        private readonly ElementHighlighter m_Highlighter = new ElementHighlighter();
-        private UniSkin.UnityEditorInternalBridge.BaseInspectView m_instructionModeView;
-        public void HighlightInstruction(GUIView view, Rect instructionRect, GUIStyle style)
-        {
-            ClearInstructionHighlighter();
+        private readonly GUIViewChunk _inspectedViewChunk = new GUIViewChunk();
 
-            var visualElement = view.windowBackend.visualTree as UnityEngine.UIElements.VisualElement;
-            if (visualElement == null)
-                return;
-            m_Highlighter.HighlightElement(visualElement, instructionRect, style);
-        }
+        private readonly List<ElementHighlighter> _highlighters = new List<ElementHighlighter>();
+        private readonly UniSkin.UI.InspectViewDrawer _inspectView = new UniSkin.UI.InspectViewDrawer();
 
-        public SkinEditWindow()
-        {
-            m_instructionModeView = new UnityEditorInternalBridge.BaseInspectView(this);
-        }
+        private MutableSkin _currentSkin;
+        private bool _hasChangeOnCurrent;
+
+        private List<Skin> _cachedSkins;
+
+        private readonly SplitterState _instructionListDetailSplitter = SplitterState.FromRelative(new float[] { 30, 70 }, new float[] { 32, 32 }, null);
+
+        private static EditorWindow GetEditorWindow(GUIView view) =>
+            view is HostView hostView ? hostView.actualView : default;
+
+        private bool CanInspectView(GUIView view) =>
+            view != null && GetEditorWindow(view) != this;
 
         private void OnEnable()
         {
+            _currentSkin = new MutableSkin(CachedSkin.Skin);
+
+            Undo.selectionUndoRedoPerformed += UndoRedoPerformed;
+            _inspectedViewChunk.OnValueChanged += OnViewChanged;
+            _inspectView.OnPropertyModify += OnPropertyModify;
+            _inspectView.OnRequestHighlight += OnRequestHighlight;
             GUIViewDebuggerHelper.onViewInstructionsChanged += OnInspectedViewChanged;
-            GUIView serializedInspected = m_Inspected;
-            inspected = null;
-            inspected = serializedInspected;
-            //m_InstructionModeView = null;
-            //instructionType = m_InstructionType;
         }
 
-        private void OnInspectedViewChanged()
+        private void OnPropertyModify(PropertyModifyData modifyData)
         {
-            m_instructionModeView.UpdateInstructions();
-            Repaint();
-        }
-
-        private void OnDisable()
-        {
-            GUIViewDebuggerHelper.onViewInstructionsChanged -= OnInspectedViewChanged;
-            inspected = null;
-        }
-
-        public GUIView inspected
-        {
-            get
+            Undo.RecordObject(CachedSkin.instance, "CachedSkin");
+            var currentViewName = GetViewName(_inspectedViewChunk.InspectedView);
+            var styleName = modifyData.ModifiedElementStyleName;
+            if (!_currentSkin.WindowStyles.TryGetValue(currentViewName, out var windowStyle))
             {
-                if (m_Inspected != null || m_InspectedEditorWindow == null)
-                    return m_Inspected;
-                // continue inspecting the same window if its dock area is destroyed by e.g., docking or undocking it
-                return inspected = m_InspectedEditorWindow.m_Parent;
+                _currentSkin.WindowStyles[currentViewName] = windowStyle = new MutableWindowStyle(currentViewName, new ElementStyle[] { });
             }
-            private set
+
+            GUIStyle guiStyle = styleName;
+            var newElementStyle = new MutableElementStyle(modifyData.ModifiedElementStyleName, guiStyle.fontSize, guiStyle.fontStyle, new StyleState[] { });
+
+            if (!windowStyle.ElementStyles.TryGetValue(styleName, out var elementStyle))
             {
-                if (m_Inspected != value)
+                windowStyle.ElementStyles[styleName] = elementStyle = new MutableElementStyle();
+            }
+
+            elementStyle.Name = modifyData.ModifiedElementStyleName;
+            elementStyle.FontSize = guiStyle.fontSize;
+            elementStyle.FontStyle = guiStyle.fontStyle;
+            elementStyle.StyleStates[modifyData.ModifiedStyleState.StateType] = new MutableStyleState(modifyData.ModifiedStyleState);
+
+            var targetTextures = modifyData.AddedTextures.Where(x => !_currentSkin.Textures.ContainsKey(x.Id));
+            foreach (var targetTexture in targetTextures)
+            {
+                _currentSkin.Textures[targetTexture.Id] = targetTexture;
+            }
+
+            _hasChangeOnCurrent = true;
+            Reserialize();
+        }
+
+        private void Reserialize()
+        {
+            CachedSkin.Update(_currentSkin.ToImmutable());
+            CachedSkin.Save();
+        }
+
+        private void ClearHighlighters()
+        {
+            foreach (var highlighter in _highlighters)
+            {
+                highlighter.ClearElement();
+            }
+        }
+
+        private void OnRequestHighlight(bool highlight, HighlightData highlightData)
+        {
+            ClearHighlighters();
+
+            if (highlight && highlightData.View.windowBackend.visualTree is VisualElement visualElement)
+            {
+                if (_highlighters.Count < highlightData.InstructionRects.Count)
                 {
-                    ClearInstructionHighlighter();
+                    var newHighlighters = Enumerable.Range(0, highlightData.InstructionRects.Count - _highlighters.Count)
+                        .Select(_ => new ElementHighlighter());
 
-                    m_Inspected = value;
-                    if (m_Inspected != null)
-                    {
-                        m_InspectedEditorWindow = (m_Inspected is HostView) ? ((HostView)m_Inspected).actualView : null;
-                        GUIViewDebuggerHelper.DebugWindow(m_Inspected);
-                        m_Inspected.Repaint();
-                    }
-                    else
-                    {
-                        m_InspectedEditorWindow = null;
-                        GUIViewDebuggerHelper.StopDebugging();
-                    }
-                    if (m_instructionModeView != null)
-                        m_instructionModeView.ClearRowSelection();
+                    _highlighters.AddRange(newHighlighters);
+                }
 
-                    OnInspectedViewChanged();
+                foreach (var (highlighter, index) in _highlighters.Take(highlightData.InstructionRects.Count).Select((x, i) => (x, i)))
+                {
+                    highlighter.HighlightElement(visualElement, highlightData.InstructionRects[index], highlightData.Style);
                 }
             }
         }
 
-        private readonly SplitterState m_InstructionListDetailSplitter = SplitterState.FromRelative(new float[] { 30, 70 }, new float[] { 32, 32 }, null);
+        private void OnViewChanged()
+        {
+            ClearHighlighters();
+            _inspectView.ClearRowSelection();
+
+            OnInspectedViewChanged();
+        }
+
+        private void OnInspectedViewChanged()
+        {
+            _inspectView.UpdateInstructions();
+            Repaint();
+        }
 
         private void ShowDrawInstructions()
         {
-            if (inspected == null)
-            {
-                ClearInstructionHighlighter();
-                return;
-            }
+            SplitterGUILayout.BeginHorizontalSplit(_instructionListDetailSplitter);
 
-            SplitterGUILayout.BeginHorizontalSplit(m_InstructionListDetailSplitter);
-
-            m_instructionModeView.DrawInstructionList();
+            _inspectView.DrawInstructionList();
 
             EditorGUILayout.BeginVertical();
             {
-                m_instructionModeView.DrawSelectedInstructionDetails(position.width - m_InstructionListDetailSplitter.realSizes[0]);
+                _inspectView.DrawSelectedInstructionDetails(_inspectedViewChunk.InspectedView);
             }
             EditorGUILayout.EndVertical();
 
             SplitterGUILayout.EndHorizontalSplit();
 
-            EditorGUIUtility.DrawHorizontalSplitter(new Rect(m_InstructionListDetailSplitter.realSizes[0] + 1, EditorGUI.kWindowToolbarHeight, 1, position.height));
-        }
-
-        private void DoToolbar()
-        {
-            GUILayout.BeginHorizontal(EditorStyles.toolbar);
-
-            DoWindowPopup();
-
-            GUILayout.EndHorizontal();
+            EditorGUIUtility.DrawHorizontalSplitter(new Rect(_instructionListDetailSplitter.realSizes[0] + 1, EditorGUI.kWindowToolbarHeight, 1, position.height));
         }
 
         private void OnGUI()
         {
-            DoToolbar();
+            GUILayout.BeginHorizontal(EditorStyles.toolbar);
+            DoWindowPopup();
+            GUILayout.EndHorizontal();
+
+            if (_inspectedViewChunk.InspectedView is null)
+            {
+                return;
+            }
+
             ShowDrawInstructions();
-        }
-
-        public void ClearInstructionHighlighter()
-        {
-            m_Highlighter.ClearElement();
-        }
-
-        private static EditorWindow GetEditorWindow(GUIView view)
-        {
-            var hostView = view as HostView;
-            if (hostView != null)
-                return hostView.actualView;
-
-            return null;
         }
 
         private static string GetViewName(GUIView view)
         {
             var editorWindow = GetEditorWindow(view);
             if (editorWindow != null)
+            {
                 return editorWindow.titleContent.text;
+            }
 
             return view.GetType().Name;
         }
 
-        private bool CanInspectView(GUIView view)
-        {
-            if (view == null)
-                return false;
-
-            EditorWindow editorWindow = GetEditorWindow(view);
-            if (editorWindow == null)
-                return true;
-
-            if (editorWindow == this)
-                return false;
-
-            return true;
-        }
-
-        private void OnWindowSelected(object userdata, string[] options, int selected)
-        {
-            selected--;
-            inspected = selected < 0 ? null : ((List<GUIView>)userdata)[selected];
-        }
-
         private void DoWindowPopup()
         {
-            string selectedName = inspected == null ? "<Please Select>" : GetViewName(inspected);
+            var inspectedView = _inspectedViewChunk.InspectedView;
+            var selectedName = inspectedView is GUIView ? GetViewName(inspectedView) : "<Please Select>";
 
             GUILayout.Label("Inspected View: ", GUILayout.ExpandWidth(false));
 
-            Rect popupPosition = GUILayoutUtility.GetRect(new GUIContent(selectedName), EditorStyles.toolbarDropDown, GUILayout.ExpandWidth(true));
-            if (GUI.Button(popupPosition, new GUIContent(selectedName), EditorStyles.toolbarDropDown))
+            var popupPosition = GUILayoutUtility.GetRect(new GUIContent(selectedName), EditorStyles.toolbarDropDown, GUILayout.ExpandWidth(true));
+            if (UnityEngine.GUI.Button(popupPosition, new GUIContent(selectedName), EditorStyles.toolbarDropDown))
             {
-                List<GUIView> views = new List<GUIView>();
+                var views = new List<GUIView>();
                 GUIViewDebuggerHelper.GetViews(views);
+                views = views.Where(CanInspectView).ToList();
 
-                List<GUIContent> options = new List<GUIContent>(views.Count + 1)
-                {
-                    EditorGUIUtility.TrTextContent("None")
-                };
+                var options = views.Where(CanInspectView)
+                    .Select(GetViewName)
+                    .Prepend("None")
+                    .Select(x => new GUIContent(x))
+                    .ToArray();
 
-                int selectedIndex = 0;
-                List<GUIView> selectableViews = new List<GUIView>(views.Count + 1);
-                for (int i = 0; i < views.Count; ++i)
-                {
-                    GUIView view = views[i];
+                var selectedIndex = views.IndexOf(inspectedView) + 1;
 
-                    //We can't inspect ourselves, otherwise we get infinite recursion.
-                    //Also avoid the InstructionOverlay
-                    if (!CanInspectView(view))
-                        continue;
-
-                    GUIContent label = new GUIContent(string.Format("{0}. {1}", options.Count, GetViewName(view)));
-                    options.Add(label);
-                    selectableViews.Add(view);
-
-                    if (view == inspected)
-                        selectedIndex = selectableViews.Count;
-                }
-                //TODO: convert this to a Unity Window style popup. This way we could highlight the window on hover ;)
-                EditorUtility.DisplayCustomMenu(popupPosition, options.ToArray(), selectedIndex, OnWindowSelected, selectableViews);
+                EditorUtility.DisplayCustomMenu(popupPosition, options, selectedIndex, OnInspectionValueSelected, views);
             }
+
+            GUILayout.Label("Current selected skin: ", GUILayout.ExpandWidth(false));
+
+            var currentSkinName = new GUIContent(_currentSkin.Name);
+            var currentSkinPopupPosition = GUILayoutUtility.GetRect(currentSkinName, EditorStyles.toolbarDropDown, GUILayout.ExpandWidth(true));
+            if (UnityEngine.GUI.Button(currentSkinPopupPosition, currentSkinName, EditorStyles.toolbarDropDown))
+            {
+                if (_cachedSkins == default)
+                {
+                    var projectPath = System.IO.Directory.GetCurrentDirectory();
+
+                    _cachedSkins = Directory.GetFiles(Application.dataPath, "*.skn", SearchOption.AllDirectories)
+                        .Where(x => !x.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                        .Select(x => x.Replace(projectPath, string.Empty))
+                        .Select(AssetDatabase.LoadAssetAtPath<TextAsset>)
+                        .Select(x => JsonUtility.FromJson<Skin>(x.text))
+                        .Prepend(CachedSkin.Skin)
+                        .ToList();
+
+                    //Todo: Package preset
+                }
+
+                var options = _cachedSkins
+                    .Select(x => x.Name)
+                    .Select(x => new GUIContent(x))
+                    .ToArray();
+
+                var selectedSkin = _cachedSkins.Select((cachedSkin, index) => (cachedSkin, index)).FirstOrDefault(x => x.cachedSkin.Id == _currentSkin.Id);
+                var selectedIndex = selectedSkin.cachedSkin is Skin ? selectedSkin.index : -1;
+
+                EditorUtility.DisplayCustomMenu(currentSkinPopupPosition, options, selectedIndex, OnSkinSelected, _cachedSkins);
+            }
+
+            var currentButtonRect = GUILayoutUtility.GetRect(new GUIContent("Save"), EditorStyles.toolbarButton, GUILayout.ExpandWidth(true));
+            GUI.Button(currentButtonRect, new GUIContent("Save"));
+        }
+
+        private void OnInspectionValueSelected(object userdata, string[] options, int selected)
+        {
+            var selectableViews = userdata as IReadOnlyList<GUIView>;
+
+            selected -= 1;
+
+            _inspectedViewChunk.ChangeInspectionValue(selected >= 0 ? selectableViews[selected] : null);
+        }
+
+        private void OnSkinSelected(object userdata, string[] options, int selected)
+        {
+            if (_currentSkin is MutableSkin && _hasChangeOnCurrent)
+            {
+                if (!EditorUtility.DisplayDialog("Warning", "Load another skin will lost current unsaved changes, proceed?", "Yes", "No"))
+                {
+                    return;
+                }
+            }
+
+            var selectableSkins = userdata as IReadOnlyList<Skin>;
+
+            _currentSkin = new MutableSkin(selectableSkins[selected]);
+        }
+
+        private void UndoRedoPerformed(Undo.UndoRedoType obj)
+        {
+            CachedSkin.Save();
+            Repaint();
+        }
+
+        private void OnDisable()
+        {
+            ClearHighlighters();
+            Undo.selectionUndoRedoPerformed -= UndoRedoPerformed;
+            _inspectedViewChunk.OnValueChanged -= OnViewChanged;
+            _inspectView.OnPropertyModify -= OnPropertyModify;
+            _inspectView.OnRequestHighlight -= OnRequestHighlight;
+            GUIViewDebuggerHelper.onViewInstructionsChanged -= OnInspectedViewChanged;
         }
     }
 }
