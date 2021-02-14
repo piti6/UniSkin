@@ -4,7 +4,7 @@ using UnityEngine;
 namespace UniSkin
 {
     [Serializable]
-    public class SerializableTexture2D : ISerializationCallbackReceiver
+    public class SerializableTexture2D
     {
         [SerializeField]
         private string m_id = default;
@@ -23,7 +23,7 @@ namespace UniSkin
         {
             get
             {
-                if (m_texture == default)
+                if (IsValid && m_texture == default)
                 {
                     m_texture = new Texture2D(m_width, m_height);
                     m_texture.LoadImage(m_byte);
@@ -37,17 +37,10 @@ namespace UniSkin
         public SerializableTexture2D(string id, Texture2D texture)
         {
             m_id = id;
+            m_width = texture.width;
+            m_height = texture.height;
+            m_byte = IsValid ? ImageConversion.EncodeToPNG(m_texture.MakeReadable()) : Array.Empty<byte>();
             m_texture = texture;
         }
-
-        void ISerializationCallbackReceiver.OnBeforeSerialize()
-        {
-            if (IsValid)
-            {
-                m_byte = ImageConversion.EncodeToPNG(m_texture.MakeReadable());
-            }
-        }
-
-        void ISerializationCallbackReceiver.OnAfterDeserialize() { }
     }
 }

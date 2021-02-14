@@ -10,11 +10,12 @@ namespace UniSkin
         public Dictionary<string, SerializableTexture2D> Textures { get; set; }
         public Dictionary<string, MutableWindowStyle> WindowStyles { get; set; }
 
-        public MutableSkin(Skin skin) : this(skin.Name, skin.Textures.Values.ToArray(), skin.WindowStyles.Values.ToArray())
+        public MutableSkin(Skin skin) : this(skin.Id, skin.Name, skin.Textures.Values.ToArray(), skin.WindowStyles.Values.ToArray())
         { }
 
-        public MutableSkin(string name, SerializableTexture2D[] textures, WindowStyle[] windowStyles)
+        public MutableSkin(string id, string name, SerializableTexture2D[] textures, WindowStyle[] windowStyles)
         {
+            Id = id;
             Name = name;
             Textures = textures.ToDictionary(x => x.Id);
             WindowStyles = windowStyles.ToDictionary(x => x.Name, x => new MutableWindowStyle(x));
@@ -47,9 +48,9 @@ namespace UniSkin
             return !(left == right);
         }
 
-        public Skin ToImmutable()
+        public Skin ToImmutable(bool grantNewId)
         {
-            return new Skin(Id, Name, Textures.Values.ToArray(), WindowStyles.Values.Select(x => x.ToImmutable()).ToArray());
+            return new Skin(grantNewId ? System.Guid.NewGuid().ToString() : Id, Name, Textures.Values.ToArray(), WindowStyles.Values.Select(x => x.ToImmutable()).ToArray());
         }
     }
 }

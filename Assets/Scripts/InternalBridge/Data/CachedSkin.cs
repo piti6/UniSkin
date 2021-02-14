@@ -1,10 +1,11 @@
 using System;
+using UnityEditor;
 using UnityEngine;
 
 namespace UniSkin
 {
-    [UnityEditor.FilePath("cachedSkin.skn", UnityEditor.FilePathAttribute.Location.PreferencesFolder)]
-    public class CachedSkin : UnityEditor.ScriptableSingleton<CachedSkin>
+    [FilePath("cachedSkin", FilePathAttribute.Location.PreferencesFolder)]
+    public class CachedSkin : ScriptableSingleton<CachedSkin>
     {
         public static Action OnUpdated = () => { };
         public static Skin Skin
@@ -26,11 +27,20 @@ namespace UniSkin
 
         private static bool _dirty = false;
 
-        public static void Update(Skin skin)
+        public static bool Update(Skin skin)
         {
-            instance._skin = skin;
-            _dirty = true;
-            OnUpdated.Invoke();
+            if (instance._skin == skin)
+            {
+                return false;
+            }
+            else
+            {
+                instance._skin = skin;
+                _dirty = true;
+                OnUpdated.Invoke();
+
+                return true;
+            }
         }
 
         public static void Save()

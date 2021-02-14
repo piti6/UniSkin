@@ -58,7 +58,14 @@ namespace UniSkin
 
         public static bool operator ==(Skin left, Skin right)
         {
-            return left.Equals(right);
+            if (ReferenceEquals(left, null))
+            {
+                return ReferenceEquals(right, null);
+            }
+            else
+            {
+                return left.Equals(right);
+            }
         }
 
         public static bool operator !=(Skin left, Skin right)

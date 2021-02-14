@@ -6,7 +6,7 @@ namespace UniSkin
 {
     public class MutableStyleState
     {
-        public StyleStateType SkinElementState { get; }
+        public StyleStateType StateType { get; }
         public string BackgroundTextureId { get; set; }
         public Color TextColor { get; set; }
         public List<string> ScaledBackgroundTextureIds { get; set; }
@@ -14,9 +14,9 @@ namespace UniSkin
         public MutableStyleState(StyleState styleState) : this(styleState.StateType, styleState.BackgroundTextureId, styleState.TextColor, styleState.ScaledBackgroundTextureIds.ToArray())
         { }
 
-        public MutableStyleState(StyleStateType skinElementState, string backgroundTextureId, Color textColor, string[] scaledBackgroundTextureIds)
+        public MutableStyleState(StyleStateType stateType, string backgroundTextureId, Color textColor, string[] scaledBackgroundTextureIds)
         {
-            SkinElementState = skinElementState;
+            StateType = stateType;
             BackgroundTextureId = backgroundTextureId;
             TextColor = textColor;
             ScaledBackgroundTextureIds = scaledBackgroundTextureIds.ToList();
@@ -24,7 +24,7 @@ namespace UniSkin
 
         public StyleState ToImmutable()
         {
-            return new StyleState(SkinElementState, BackgroundTextureId, TextColor, ScaledBackgroundTextureIds.ToArray());
+            return new StyleState(StateType, BackgroundTextureId, TextColor, ScaledBackgroundTextureIds.ToArray());
         }
     }
 }

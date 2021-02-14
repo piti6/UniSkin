@@ -122,6 +122,7 @@ namespace UniSkin
                 //c.backgroundImage = styleBackground;
                 var d = b.parent[0] as IMGUIContainer;
                 var current = d.onGUIHandler;
+                //d.SendEvent(new EventBase)
 
                 d.onGUIHandler = () =>
                 {
@@ -132,8 +133,8 @@ namespace UniSkin
                     var prop = typeof(GUISkin).GetField("current", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
                     //prop.SetValue(null, skin);
 
-                    //GUI.skin = skin;
-                    UnityEngine.GUI.DrawTexture(d.contentRect, m_sprites[0], ScaleMode.ScaleAndCrop);
+                    //GUI.skin = skin; 
+                    //UnityEngine.GUI.DrawTexture(d.contentRect, m_sprites[0], ScaleMode.ScaleAndCrop);
                     //if (!did)
                     //{
                     //    var gUISkin = ScriptableObject.CreateInstance<GUISkin>();
@@ -215,17 +216,19 @@ namespace UniSkin
                     //curr.customStyles.First(x => x.name.Contains("Titlebar Foldout")).focused.textColor = redred;
                     //curr.customStyles.First(x => x.name.Contains("IN TitleText")).active.textColor = redred;
                     //curr.customStyles.First(x => x.name.Contains("IN TitleText")).focused.textColor = redred;
-                    GUIStyle scrollViewAlt = "ScrollViewAlt";
-                    var curScrollViewAlt = scrollViewAlt.normal.background;
-                    scrollViewAlt.normal.background = grayTex;
+                    GUIStyle controlLabel = "ControlLabel";
+                    controlLabel.normal.textColor = Color.white;
+                    //GUIStyle scrollViewAlt = "ScrollViewAlt";
+                    //var curScrollViewAlt = scrollViewAlt.normal.background;
+                    //scrollViewAlt.normal.background = grayTex;
 
-                    GUIStyle dock = "dockarea";
-                    var curDockArea = dock.normal.background;
-                    dock.normal.background = grayTex;
+                    //GUIStyle dock = "dockarea";
+                    //var curDockArea = dock.normal.background;
+                    //dock.normal.background = grayTex;
 
-                    GUIStyle tab = "TabWindowBackground";
-                    var curTabWindowBackground = tab.normal.background;
-                    tab.normal.background = grayTex;
+                    //GUIStyle tab = "TabWindowBackground";
+                    //var curTabWindowBackground = tab.normal.background;
+                    //tab.normal.background = grayTex;
 
                     //GUIStyle whiteBackground = "WhiteBackground";
                     //whiteBackground.normal.textColor = redred;
@@ -315,11 +318,19 @@ namespace UniSkin
                     //UnityEditor.DockArea
                     //GUI.color = Color.blue;
                     current();
+
+                    if (editorWindow.titleContent.text == "Inspector")
+                    {
+                        GUIStyle a = "ControlLabel";
+                        a.normal.textColor = new Color(Random.Range(0.00f, 1.00f), Random.Range(0.00f, 1.00f), Random.Range(0.00f, 1.00f), 1);
+                    }
+
                     //GUI.color = Color.blue;
 
-                    scrollViewAlt.normal.background = defaultColor;
-                    dock.normal.background = defaultColor;
-                    tab.normal.background = defaultColor;
+                    //controlLabel.normal.textColor = GetDefaultBackgroundColor();
+                    //scrollViewAlt.normal.background = defaultColor;
+                    //dock.normal.background = defaultColor;
+                    //tab.normal.background = defaultColor;
                 };
                 //d.ClearClassList();
 
