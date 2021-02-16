@@ -123,7 +123,9 @@ namespace UniSkin
                 var d = b.parent[0] as IMGUIContainer;
                 var current = d.onGUIHandler;
                 //d.SendEvent(new EventBase)
+                //int[] _a = Array.Empty<int>();
 
+                //
                 d.onGUIHandler = () =>
                 {
                     if (editorWindow.titleContent.text == "Inspector")
@@ -319,11 +321,11 @@ namespace UniSkin
                     //GUI.color = Color.blue;
                     current();
 
-                    if (editorWindow.titleContent.text == "Inspector")
-                    {
-                        GUIStyle a = "ControlLabel";
-                        a.normal.textColor = new Color(Random.Range(0.00f, 1.00f), Random.Range(0.00f, 1.00f), Random.Range(0.00f, 1.00f), 1);
-                    }
+                    //if (editorWindow.titleContent.text == "Inspector")
+                    //{
+                    //    GUIStyle a = "ControlLabel";
+                    //    a.normal.textColor = new Color(Random.Range(0.00f, 1.00f), Random.Range(0.00f, 1.00f), Random.Range(0.00f, 1.00f), 1);
+                    //}
 
                     //GUI.color = Color.blue;
 

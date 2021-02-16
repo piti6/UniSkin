@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace UniSkin.UI
@@ -10,23 +8,23 @@ namespace UniSkin.UI
         public StyleState ModifiedStyleState { get; }
         public int FontSize { get; }
         public FontStyle FontStyle { get; }
-        public SerializableTexture2D[] AddedTextures { get; }
+        public SerializableTexture2D AddedTexture { get; }
 
-        public PropertyModifyData(string modifiedElementStyleName, StyleState modifiedStyleState, int fontSize, FontStyle fontStyle, IEnumerable<Texture2D> addedTextures)
-            : this(modifiedElementStyleName, modifiedStyleState, fontSize, fontStyle, addedTextures.Select(x => x.ToSerializableTexture2D()))
+        public PropertyModifyData(string modifiedElementStyleName, StyleState modifiedStyleState, int fontSize, FontStyle fontStyle, Texture2D addedTexture)
+            : this(modifiedElementStyleName, modifiedStyleState, fontSize, fontStyle, addedTexture?.ToSerializableTexture2D())
         { }
 
         public PropertyModifyData(string modifiedElementStyleName, int fontSize, FontStyle fontStyle)
-            : this(modifiedElementStyleName, default, fontSize, fontStyle, Enumerable.Empty<SerializableTexture2D>())
+            : this(modifiedElementStyleName, default, fontSize, fontStyle, default(SerializableTexture2D))
         { }
 
-        public PropertyModifyData(string modifiedElementStyleName, StyleState modifiedStyleState, int fontSize, FontStyle fontStyle, IEnumerable<SerializableTexture2D> addedTextures)
+        public PropertyModifyData(string modifiedElementStyleName, StyleState modifiedStyleState, int fontSize, FontStyle fontStyle, SerializableTexture2D addedTexture)
         {
             ModifiedElementStyleName = modifiedElementStyleName;
             ModifiedStyleState = modifiedStyleState;
             FontSize = fontSize;
             FontStyle = fontStyle;
-            AddedTextures = addedTextures.ToArray();
+            AddedTexture = addedTexture;
         }
     }
 }

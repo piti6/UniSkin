@@ -3,7 +3,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEditor;
 using System.Linq;
-using UnityEditorInternal;
 
 namespace UniSkin.UI
 {
@@ -12,7 +11,7 @@ namespace UniSkin.UI
         public event Action<bool, PropertyModifyData> OnPropertyModify = (colorChanged, modifyData) => { };
         public event Action<bool, HighlightData> OnRequestHighlight = (needHighlight, highlightData) => { };
 
-        private List<(GUIStyle UsedGUIStyle, IEnumerable<Rect> Rects)> _instructionData = new List<(GUIStyle UsedGUIStyle, IEnumerable<Rect>)>();
+        private (GUIStyle UsedGUIStyle, IEnumerable<Rect> Rects)[] _instructionData = Array.Empty<(GUIStyle, IEnumerable<Rect>)>();// .Empty<int>();
         private CachedInstructionInfo _cachedInstructionInfo;
 
         [NonSerialized]
@@ -27,7 +26,7 @@ namespace UniSkin.UI
             _instructionData = instructions.Where(x => !string.IsNullOrEmpty(x.label))
                 .GroupBy(x => x.usedGUIStyle)
                 .Select(x => (x.Key, x.Select(y => y.rect)))
-                .ToList();
+                .ToArray();
         }
 
         public void ClearRowSelection()
@@ -46,11 +45,11 @@ namespace UniSkin.UI
             GUIViewDebuggerWindow.Styles.listItem.Draw(el.position, tempContent, id, _listViewState.row == el.row);
         }
 
-        internal void OnSelectedInstructionChanged(int index, GUIView currentInspectedView)
+        private void OnSelectedInstructionChanged(int index, GUIView currentInspectedView)
         {
             _listViewState.row = index;
 
-            if (_listViewState.row >= 0 && index < _instructionData.Count)
+            if (_listViewState.row >= 0 && index < _instructionData.Length)
             {
                 var instruction = _instructionData[_listViewState.row];
 
@@ -74,7 +73,7 @@ namespace UniSkin.UI
         public void DrawInstructionList()
         {
             Event evt = Event.current;
-            _listViewState.totalRows = _instructionData.Count;
+            _listViewState.totalRows = _instructionData.Length;
 
             EditorGUILayout.BeginVertical(GUIViewDebuggerWindow.Styles.listBackgroundStyle);
             GUILayout.Label("Instructions");
@@ -84,7 +83,7 @@ namespace UniSkin.UI
             {
                 var listViewElement = (ListViewElement)element;
                 // Paint list view element
-                if (evt.type == EventType.Repaint && listViewElement.row < _instructionData.Count)
+                if (evt.type == EventType.Repaint && listViewElement.row < _instructionData.Length)
                 {
                     DoDrawInstruction(listViewElement, id);
                 }
@@ -95,13 +94,15 @@ namespace UniSkin.UI
         private readonly Dictionary<StyleStateType, bool> _foldOutStatus = EnumUtility.GetValues<StyleStateType>()
             .ToDictionary(x => x, _ => false);
 
+        private static readonly string[] _backgroundModeCaptions = new string[] { "Texture", "Color" };
+
         public void DrawSelectedInstructionDetails(GUIView currentInspectedView, MutableWindowStyle currentWindowStyle, IReadOnlyDictionary<string, SerializableTexture2D> textures)
         {
             if (_listViewState.selectionChanged)
             {
                 OnSelectedInstructionChanged(_listViewState.row, currentInspectedView);
             }
-            else if (_listViewState.row >= _instructionData.Count)
+            else if (_listViewState.row >= _instructionData.Length)
             {
                 OnSelectedInstructionChanged(-1, currentInspectedView);
             }
@@ -118,7 +119,6 @@ namespace UniSkin.UI
                 return;
             }
 
-            using (var propertyChangeCheckScope = new EditorGUI.ChangeCheckScope())
             using (var scrollView = new EditorGUILayout.ScrollViewScope(_instructionDetailsScrollPos, GUIViewDebuggerWindow.Styles.boxStyle))
             {
                 var inspectedStyle = _cachedInstructionInfo.StyleContainer.inspectedStyle;
@@ -146,83 +146,72 @@ namespace UniSkin.UI
                 {
                     using (var stateChangeCheckScope = new EditorGUI.ChangeCheckScope())
                     {
-                        MutableStyleState styleState = default;
-                        currentElementStyle?.StyleStates.TryGetValue(styleType, out styleState);
-
                         var opened = _foldOutStatus[styleType] = EditorGUILayout.Foldout(_foldOutStatus[styleType], GUIContentUtility.UseCached(styleType.ToString()));
                         if (!opened) continue;
 
                         EditorGUI.indentLevel += 1;
 
-                        styleState = styleState ?? new MutableStyleState(_cachedInstructionInfo.StyleStates[styleType]);
-
-                        var addedTextures = new List<SerializableTexture2D>();
+                        MutableStyleState styleState = default;
+                        if (!currentElementStyle?.StyleStates.TryGetValue(styleType, out styleState) ?? true)
+                        {
+                            styleState = new MutableStyleState(_cachedInstructionInfo.StyleStates[styleType]);
+                        }
 
                         textures.TryGetValue(styleState.BackgroundTextureId ?? string.Empty, out var backgroundTexture);
 
-                        var currentTexture = backgroundTexture?.Texture;
+                        SerializableTexture2D addedTexture = default;
+                        var beforeBackgroundColor = styleState.BackgroundColor;
+                        var afterBackgroundColor = styleState.BackgroundColor;
 
-                        var selectedTextureObject = EditorGUILayout.ObjectField("BackgroundTexture", currentTexture, typeof(Texture2D), allowSceneObjects: false);
-                        var selectedTexture = selectedTextureObject as Texture2D;
-                        if (currentTexture != selectedTexture)
+                        var selectedMode = styleState.BackgroundType = (BackgroundType)GUILayout.SelectionGrid((int)styleState.BackgroundType, _backgroundModeCaptions, 2, "Toggle");
+                        switch (selectedMode)
                         {
-                            if (selectedTexture is Texture2D)
-                            {
-                                var serializableTexture2D = selectedTexture.ToSerializableTexture2D();
-                                styleState.BackgroundTextureId = serializableTexture2D.Id;
-                                addedTextures.Add(serializableTexture2D);
-                            }
-                            else
-                            {
-                                styleState.BackgroundTextureId = string.Empty;
-                            }
+                            case BackgroundType.Texture:
+                                {
+                                    var currentTexture = backgroundTexture?.Texture;
+                                    var selectedTextureObject = EditorGUILayout.ObjectField("BackgroundTexture", currentTexture, typeof(Texture2D), allowSceneObjects: false);
+                                    var selectedTexture = selectedTextureObject as Texture2D;
+                                    if (currentTexture != selectedTexture)
+                                    {
+                                        if (selectedTexture is Texture2D)
+                                        {
+                                            var serializableTexture2D = selectedTexture.ToSerializableTexture2D();
+                                            styleState.BackgroundTextureId = serializableTexture2D.Id;
+                                            addedTexture = serializableTexture2D;
+                                        }
+                                        else
+                                        {
+                                            styleState.BackgroundTextureId = string.Empty;
+                                        }
+                                    }
+                                    break;
+                                }
+                            case BackgroundType.Color:
+                                {
+                                    styleState.BackgroundColor = afterBackgroundColor = EditorGUILayout.ColorField(GUIContentUtility.UseCached("BackgroundColor"), beforeBackgroundColor);
+                                    break;
+                                }
+
+                            default: throw new Exception();
                         }
 
-                        GUILayout.Space(20);
-
-                        var beforeColor = styleState.TextColor;
-                        var afterColor = EditorGUILayout.ColorField(GUIContentUtility.UseCached("TextColor"), styleState.TextColor);
-                        var colorHasChanged = beforeColor != afterColor;
-                        styleState.TextColor = afterColor;
-
-                        var beforeScaledBackgroundTextures = styleState.ScaledBackgroundTextureIds
-                            .Select(x =>
-                            {
-                                textures.TryGetValue(x, out var scaledBackgroundTexture);
-
-                                return scaledBackgroundTexture;
-                            })
-                            .Where(x => x is SerializableTexture2D)
-                            .Select(x => x.Texture)
-                            .ToArray();
-
-                        var afterScaledBackgroundTextures = beforeScaledBackgroundTextures.ToArray();
 
                         GUILayout.Space(20);
 
-                        var textureList = new ReorderableList(afterScaledBackgroundTextures, typeof(Texture2D));
-                        textureList.drawHeaderCallback += rect => GUI.Label(rect, "Scaled backgrounds");
-                        textureList.DoLayoutList();
-
-                        var addedScaledBackgroundTextures = afterScaledBackgroundTextures.Except(beforeScaledBackgroundTextures).Select(x => x.ToSerializableTexture2D()).ToArray();
-                        addedTextures.AddRange(addedScaledBackgroundTextures);
-
-                        styleState.ScaledBackgroundTextureIds.AddRange(addedScaledBackgroundTextures.Select(x => x.Id));
+                        var beforeTextColor = styleState.TextColor;
+                        var afterTextColor = EditorGUILayout.ColorField(GUIContentUtility.UseCached("TextColor"), beforeTextColor);
+                        var colorHasChanged = beforeBackgroundColor != afterBackgroundColor || beforeTextColor != afterTextColor;
+                        styleState.TextColor = afterTextColor;
 
                         if (stateChangeCheckScope.changed)
                         {
-                            var modifyData = new PropertyModifyData(elementStyleName, styleState.ToImmutable(), afterFontSize, afterFontStyle, addedTextures);
+                            var modifyData = new PropertyModifyData(elementStyleName, styleState.ToImmutable(), afterFontSize, afterFontStyle, addedTexture);
 
                             OnPropertyModify.Invoke(colorHasChanged, modifyData);
                         }
 
                         EditorGUI.indentLevel -= 1;
                     }
-                }
-
-                if (propertyChangeCheckScope.changed)
-                {
-                    currentInspectedView.Repaint();
                 }
             }
         }

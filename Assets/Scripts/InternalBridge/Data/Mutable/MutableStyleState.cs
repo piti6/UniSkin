@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace UniSkin
@@ -7,24 +5,26 @@ namespace UniSkin
     public class MutableStyleState
     {
         public StyleStateType StateType { get; }
+        public BackgroundType BackgroundType { get; set; }
         public string BackgroundTextureId { get; set; }
+        public Color BackgroundColor { get; set; }
         public Color TextColor { get; set; }
-        public List<string> ScaledBackgroundTextureIds { get; set; }
 
-        public MutableStyleState(StyleState styleState) : this(styleState.StateType, styleState.BackgroundTextureId, styleState.TextColor, styleState.ScaledBackgroundTextureIds.ToArray())
+        public MutableStyleState(StyleState styleState) : this(styleState.StateType, styleState.BackgroundType, styleState.BackgroundTextureId, styleState.BackgroundColor, styleState.TextColor)
         { }
 
-        public MutableStyleState(StyleStateType stateType, string backgroundTextureId, Color textColor, string[] scaledBackgroundTextureIds)
+        public MutableStyleState(StyleStateType stateType, BackgroundType backgroundType, string backgroundTextureId, Color backgroundColor, Color textColor)
         {
             StateType = stateType;
+            BackgroundType = backgroundType;
             BackgroundTextureId = backgroundTextureId;
+            BackgroundColor = backgroundColor;
             TextColor = textColor;
-            ScaledBackgroundTextureIds = scaledBackgroundTextureIds.ToList();
         }
 
         public StyleState ToImmutable()
         {
-            return new StyleState(StateType, BackgroundTextureId, TextColor, ScaledBackgroundTextureIds.ToArray());
+            return new StyleState(StateType, BackgroundType, BackgroundTextureId, BackgroundColor, TextColor);
         }
     }
 }

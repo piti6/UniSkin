@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace UniSkin
@@ -8,25 +7,29 @@ namespace UniSkin
     public class StyleState
     {
         public StyleStateType StateType => _stateType;
+        public BackgroundType BackgroundType => _backgroundType;
         public string BackgroundTextureId => _backgroundTextureId;
+        public Color BackgroundColor => _backgroundColor;
         public Color TextColor => _textColor;
-        public IReadOnlyList<string> ScaledBackgroundTextureIds => _scaledBackgroundTextureIds;
 
         [SerializeField]
         private StyleStateType _stateType;
         [SerializeField]
+        private BackgroundType _backgroundType;
+        [SerializeField]
         private string _backgroundTextureId;
         [SerializeField]
-        private Color _textColor;
+        private Color _backgroundColor;
         [SerializeField]
-        private string[] _scaledBackgroundTextureIds;
+        private Color _textColor;
 
-        public StyleState(StyleStateType stateType, string backgroundTextureId, Color textColor, string[] scaledBackgroundTextureIds)
+        public StyleState(StyleStateType stateType, BackgroundType backgroundType, string backgroundTextureId, Color backgroundColor, Color textColor)
         {
             _stateType = stateType;
+            _backgroundType = backgroundType;
             _backgroundTextureId = backgroundTextureId;
+            _backgroundColor = backgroundColor;
             _textColor = textColor;
-            _scaledBackgroundTextureIds = scaledBackgroundTextureIds;
         }
     }
 }

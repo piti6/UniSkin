@@ -31,10 +31,8 @@ namespace UniSkin
 
                 if (!windowDictionary.TryGetValue(instanceId, out _))
                 {
-                    if (SkinRenderer.Register(editorWindow))
-                    {
-                        windowDictionary[instanceId] = editorWindow;
-                    }
+                    SkinRenderer.Register(editorWindow);
+                    windowDictionary[instanceId] = editorWindow;
                 }
 
                 //Remove disposed windows

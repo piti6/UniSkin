@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 
 namespace UniSkin
@@ -7,7 +6,7 @@ namespace UniSkin
     {
         public static StyleState ToStyleState(this GUIStyleState guiStyleState, StyleStateType stateType)
         {
-            return new StyleState(stateType, guiStyleState.background.ToTextureId(), guiStyleState.textColor, guiStyleState.scaledBackgrounds.Where(x => x != null).Select(x => x.ToTextureId()).ToArray());
+            return new StyleState(stateType, BackgroundType.Texture, guiStyleState.background.ToTextureId(), Color.white, guiStyleState.textColor);
         }
     }
 }

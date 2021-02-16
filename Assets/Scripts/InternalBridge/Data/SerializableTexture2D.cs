@@ -39,8 +39,8 @@ namespace UniSkin
             m_id = id;
             m_width = texture.width;
             m_height = texture.height;
-            m_byte = IsValid ? ImageConversion.EncodeToPNG(m_texture.MakeReadable()) : Array.Empty<byte>();
             m_texture = texture;
+            m_byte = IsValid ? ImageConversion.EncodeToPNG(texture.MakeReadable()) : Array.Empty<byte>();
         }
     }
 }

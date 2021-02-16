@@ -19,7 +19,7 @@ namespace UniSkin.UI
         private readonly GUIViewChunk _inspectedViewChunk = new GUIViewChunk();
 
         private readonly List<ElementHighlighter> _highlighters = new List<ElementHighlighter>();
-        private readonly UniSkin.UI.InspectViewDrawer _inspectView = new UniSkin.UI.InspectViewDrawer();
+        private readonly UniSkin.UI.InspectViewDrawer _inspectViewDrawer = new UniSkin.UI.InspectViewDrawer();
 
         private Skin _currentOriginalSkin;
         private MutableSkin _currentSkin;
@@ -37,9 +37,9 @@ namespace UniSkin.UI
 
             Undo.selectionUndoRedoPerformed += UndoRedoPerformed;
             _inspectedViewChunk.OnValueChanged += OnViewChanged;
-            _inspectView.OnPropertyModify += OnPropertyModify;
-            _inspectView.OnRequestHighlight += OnRequestHighlight;
-            GUIViewDebuggerHelper.onViewInstructionsChanged += OnInspectedViewChanged;
+            _inspectViewDrawer.OnPropertyModify += OnPropertyModify;
+            _inspectViewDrawer.OnRequestHighlight += OnRequestHighlight;
+            GUIViewDebuggerHelper.onViewInstructionsChanged += OnViewInstructionsChanged;
         }
 
         private void OnPropertyModify(bool colorChanged, PropertyModifyData modifyData)
@@ -62,18 +62,17 @@ namespace UniSkin.UI
                 elementStyle.StyleStates[modifiedStyleState.StateType] = new MutableStyleState(modifiedStyleState);
             }
 
-            // Add Target textures
-            var targetTextures = modifyData.AddedTextures.Where(x => !_currentSkin.Textures.ContainsKey(x.Id));
-            foreach (var targetTexture in targetTextures)
+            // Add Target texture
+            if (modifyData.AddedTexture is SerializableTexture2D addedTexture)
             {
-                _currentSkin.Textures[targetTexture.Id] = targetTexture;
+                _currentSkin.Textures[addedTexture.Id] = addedTexture;
             }
 
             // Remove Unused textures
             var wholeTextureIds = _currentSkin.WindowStyles.Values
                 .SelectMany(x => x.ElementStyles.Values)
                 .SelectMany(x => x.StyleStates.Values)
-                .SelectMany(x => x.ScaledBackgroundTextureIds.Append(x.BackgroundTextureId))
+                .Select(x => x.BackgroundTextureId)
                 .Distinct();
 
             foreach (var textureId in wholeTextureIds.Where(x => !string.IsNullOrEmpty(x)).Where(x => !_currentSkin.Textures.ContainsKey(x)))
@@ -90,16 +89,19 @@ namespace UniSkin.UI
                 recordUndo = true;
             }
             //Throttle undo record timing as dragging on color picker palette would call Undo.RecordObject method like every frame.
-            else if (EditorApplication.timeSinceStartup - previousColorChangedTime > 1)
+            else if (EditorApplication.timeSinceStartup - _lastColorChangedSeconds > 1)
             {
-                previousColorChangedTime = EditorApplication.timeSinceStartup;
+                _lastColorChangedSeconds = EditorApplication.timeSinceStartup;
                 recordUndo = true;
             }
 
             UpdateCachedSkin(recordUndo);
+            _inspectedViewChunk.InspectedView?.Repaint();
+
+            _a = true;
         }
 
-        private double previousColorChangedTime;
+        private double _lastColorChangedSeconds;
         private void UpdateCachedSkin(bool recordUndo)
         {
             if (recordUndo)
@@ -142,40 +144,24 @@ namespace UniSkin.UI
         private void OnViewChanged()
         {
             ClearHighlighters();
-            _inspectView.ClearRowSelection();
+            _inspectViewDrawer.ClearRowSelection();
 
-            OnInspectedViewChanged();
+            OnViewInstructionsChanged();
         }
 
-        private void OnInspectedViewChanged()
+        private void OnViewInstructionsChanged()
         {
-            _inspectView.UpdateInstructions();
+            //Skip instructions changed event when Color picker window showing, since it is fairly heavy task.
+            if (HasOpenInstances<ColorPicker>())
+            {
+                return;
+            }
+
+            _inspectViewDrawer.UpdateInstructions();
             Repaint();
         }
 
-        private void ShowDrawInstructions()
-        {
-            SplitterGUILayout.BeginHorizontalSplit(_instructionListDetailSplitter);
-
-            _inspectView.DrawInstructionList();
-
-            EditorGUILayout.BeginVertical();
-            {
-                var inspectedViewName = _inspectedViewChunk.InspectedView.GetViewTitleName();
-                if (!_currentSkin.WindowStyles.TryGetValue(inspectedViewName, out var windowStyle))
-                {
-                    _currentSkin.WindowStyles[inspectedViewName] = windowStyle = new MutableWindowStyle(inspectedViewName, Array.Empty<ElementStyle>());
-                }
-
-                _inspectView.DrawSelectedInstructionDetails(_inspectedViewChunk.InspectedView, windowStyle, _currentSkin.Textures);
-            }
-            EditorGUILayout.EndVertical();
-
-            SplitterGUILayout.EndHorizontalSplit();
-
-            EditorGUIUtility.DrawHorizontalSplitter(new Rect(_instructionListDetailSplitter.realSizes[0] + 1, EditorGUI.kWindowToolbarHeight, 1, position.height));
-        }
-
+        private bool _a = false;
         private void OnGUI()
         {
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
@@ -190,7 +176,30 @@ namespace UniSkin.UI
                 return;
             }
 
-            ShowDrawInstructions();
+            DrawInstructions();
+        }
+
+        private void DrawInstructions()
+        {
+            SplitterGUILayout.BeginHorizontalSplit(_instructionListDetailSplitter);
+
+            _inspectViewDrawer.DrawInstructionList();
+
+            EditorGUILayout.BeginVertical();
+            {
+                var inspectedViewName = _inspectedViewChunk.InspectedView.GetViewTitleName();
+                if (!_currentSkin.WindowStyles.TryGetValue(inspectedViewName, out var windowStyle))
+                {
+                    _currentSkin.WindowStyles[inspectedViewName] = windowStyle = new MutableWindowStyle(inspectedViewName, Array.Empty<ElementStyle>());
+                }
+
+                _inspectViewDrawer.DrawSelectedInstructionDetails(_inspectedViewChunk.InspectedView, windowStyle, _currentSkin.Textures);
+            }
+            EditorGUILayout.EndVertical();
+
+            SplitterGUILayout.EndHorizontalSplit();
+
+            EditorGUIUtility.DrawHorizontalSplitter(new Rect(_instructionListDetailSplitter.realSizes[0] + 1, EditorGUI.kWindowToolbarHeight, 1, position.height));
         }
 
         private void DrawCurrentSkin()
@@ -210,11 +219,11 @@ namespace UniSkin.UI
             GUI.enabled = _hasChangeOnCurrent;
             if (GUI.Button(currentSaveButtonRect, saveLabel))
             {
-                Save();
+                SaveCurrent();
             }
             GUI.enabled = true;
 
-            var saveAsFileLabel = GUIContentUtility.UseCached("Save as file");
+            var saveAsFileLabel = GUIContentUtility.UseCached("Save as..");
             var currentSaveAsFileButtonRect = GUILayoutUtility.GetRect(saveAsFileLabel, EditorStyles.toolbarButton, GUILayout.ExpandWidth(true));
             if (GUI.Button(currentSaveAsFileButtonRect, saveAsFileLabel))
             {
@@ -223,6 +232,7 @@ namespace UniSkin.UI
 
                 var json = JsonUtility.ToJson(_currentSkin.ToImmutable(grantNewId: true));
 
+                SaveCurrent();
                 File.WriteAllText(path, json);
                 AssetDatabase.Refresh();
             }
@@ -245,10 +255,24 @@ namespace UniSkin.UI
                 _currentOriginalSkin = skin;
                 _currentSkin = new MutableSkin(skin);
 
-                Save();
+                SaveCurrent();
+            }
+
+            var resetLabel = GUIContentUtility.UseCached("Reset to default");
+            var resetButtonRect = GUILayoutUtility.GetRect(resetLabel, EditorStyles.toolbarButton, GUILayout.ExpandWidth(true));
+            if (GUI.Button(resetButtonRect, resetLabel))
+            {
+                if (!EditorUtility.DisplayDialog("Warning", "Current unsaved properties will be lost. proceed?", "Yes", "No"))
+                {
+                    return;
+                }
+
+                _currentOriginalSkin = Skin.Default;
+                _currentSkin = new MutableSkin(_currentOriginalSkin);
+
+                SaveCurrent();
             }
         }
-
 
         private void DrawWindowPopup()
         {
@@ -296,22 +320,31 @@ namespace UniSkin.UI
             ClearHighlighters();
             Undo.selectionUndoRedoPerformed -= UndoRedoPerformed;
             _inspectedViewChunk.OnValueChanged -= OnViewChanged;
-            _inspectView.OnPropertyModify -= OnPropertyModify;
-            _inspectView.OnRequestHighlight -= OnRequestHighlight;
-            GUIViewDebuggerHelper.onViewInstructionsChanged -= OnInspectedViewChanged;
+            _inspectViewDrawer.OnPropertyModify -= OnPropertyModify;
+            _inspectViewDrawer.OnRequestHighlight -= OnRequestHighlight;
+            GUIViewDebuggerHelper.onViewInstructionsChanged -= OnViewInstructionsChanged;
 
             if (_hasChangeOnCurrent)
             {
                 if (EditorUtility.DisplayDialog("Warning", "Save unsaved chnages?", "Yes", "No"))
                 {
-                    Save();
+                    SaveCurrent();
+                }
+                else
+                {
+                    Save(_currentOriginalSkin);
                 }
             }
         }
 
-        private void Save()
+        private void SaveCurrent()
         {
-            CachedSkin.Update(_currentSkin.ToImmutable(grantNewId: false));
+            Save(_currentSkin.ToImmutable(grantNewId: false));
+        }
+
+        private void Save(Skin skin)
+        {
+            CachedSkin.Update(skin);
             CachedSkin.Save();
             _hasChangeOnCurrent = false;
 

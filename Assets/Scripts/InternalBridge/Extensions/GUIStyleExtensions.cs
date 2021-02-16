@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace UniSkin
@@ -31,14 +30,6 @@ namespace UniSkin
             currentStyle.onActive = targetStyle.onActive;
             currentStyle.onFocused = targetStyle.onFocused;
             currentStyle.onHover = targetStyle.onHover;
-
-            foreach (var styleState in currentStyle.AsStyleStateEnumerable().Select(x => x.StyleState))
-            {
-                if (styleState.background == null)
-                {
-                    styleState.background = ColorTexture.GetDefaultColorTexture();
-                }
-            }
         }
     }
 }
