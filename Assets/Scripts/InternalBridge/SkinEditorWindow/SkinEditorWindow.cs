@@ -10,6 +10,10 @@ namespace UniSkin.UI
 {
     internal class SkinEditorWindow : EditorWindow
     {
+#if !UNITY_2020_2_OR_NEWER
+        private string saveChangesMessage = string.Empty;
+        private bool hasUnsavedChanges = false;
+#endif
         [MenuItem("Window/UniSkin")]
         private static void ShowWindow()
         {
@@ -162,7 +166,11 @@ namespace UniSkin.UI
         {
             ClearHighlighters();
 
+#if UNITY_2020_2_OR_NEWER
             if (highlight && highlightData.View.windowBackend.visualTree is VisualElement visualElement)
+#else
+            if (highlight && highlightData.View.visualTree is VisualElement visualElement)
+#endif
             {
                 if (_highlighters.Count < highlightData.InstructionRects.Count)
                 {
@@ -398,12 +406,21 @@ namespace UniSkin.UI
             }
         }
 
+#if UNITY_2020_2_OR_NEWER
         public override void SaveChanges()
         {
             Save(_currentSkin.ToImmutable(grantNewId: false));
 
             base.SaveChanges();
         }
+#else
+        public void SaveChanges()
+        {
+            Save(_currentSkin.ToImmutable(grantNewId: false));
+
+            hasUnsavedChanges = false;
+        }
+#endif
 
         private void Save(Skin skin)
         {

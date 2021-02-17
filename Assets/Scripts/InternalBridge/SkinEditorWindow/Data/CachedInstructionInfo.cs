@@ -20,7 +20,7 @@ namespace UniSkin.UI
                 .ToDictionary(x => x.StyleStateType, x => x.StyleState.ToStyleState(x.StyleStateType));
 
             Textures = styleContainer.inspectedStyle.AsStyleStateEnumerable()
-                .ToDictionary(x => x.StyleStateType, x => x.StyleState.scaledBackgrounds.Append(x.StyleState.background).Where(x => x != null).ToDictionary(x => x.ToTextureId()) as IReadOnlyDictionary<string, Texture2D>);
+                .ToDictionary(x => x.StyleStateType, x => x.StyleState.scaledBackgrounds.Append(x.StyleState.background).Where(y => y != null).ToDictionary(y => y.ToTextureId()) as IReadOnlyDictionary<string, Texture2D>);
         }
     }
 }

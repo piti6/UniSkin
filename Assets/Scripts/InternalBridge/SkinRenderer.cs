@@ -13,10 +13,12 @@ namespace UniSkin
 
         private static readonly Dictionary<string, GUIStyle> _cachedOriginalStyles = new Dictionary<string, GUIStyle>();
 
-        public static void Register(EditorWindow editorWindow)
+        public static bool Register(EditorWindow editorWindow)
         {
             var title = editorWindow.titleContent.text;
             var visualElement = editorWindow.rootVisualElement;
+
+            if (visualElement.parent is null) return false;
 
             var guiContainer = visualElement.parent[0] as IMGUIContainer;
             var originalGUIHandler = guiContainer.onGUIHandler;
@@ -42,6 +44,8 @@ namespace UniSkin
 
                 originalGUIHandler.Invoke();
             };
+
+            return true;
         }
 
         private static void ApplySkin(Skin skin, WindowStyle windowStyle)

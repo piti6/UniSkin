@@ -33,7 +33,7 @@ namespace UniSkin.UI
         public event Action<bool, PropertyModifyData> OnPropertyModify = (colorChanged, modifyData) => { };
         public event Action<bool, int> OnSelectInstruction = (selected, index) => { };
 
-        private readonly SplitterState _instructionListDetailSplitter = SplitterState.FromRelative(new float[] { 30, 70 }, new float[] { 32, 32 }, null);
+        private readonly SplitterState _instructionListDetailSplitter = new SplitterState(new float[] { 30, 70 }, new int[] { 32, 32 }, null);
 
         private readonly ListViewState _listViewState = new ListViewState();
 
