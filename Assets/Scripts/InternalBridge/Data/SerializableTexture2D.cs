@@ -4,7 +4,7 @@ using UnityEngine;
 namespace UniSkin
 {
     [Serializable]
-    public class SerializableTexture2D
+    internal class SerializableTexture2D
     {
         [SerializeField]
         private string m_id = default;
@@ -33,7 +33,6 @@ namespace UniSkin
             }
         }
 
-        public SerializableTexture2D() { }
         public SerializableTexture2D(string id, Texture2D texture)
         {
             m_id = id;

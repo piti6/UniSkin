@@ -6,7 +6,7 @@ using UnityEngine;
 namespace UniSkin
 {
     [Serializable]
-    public class ElementStyle
+    internal class ElementStyle
     {
         public string Name => _name;
         public int FontSize => _fontSize;
@@ -24,7 +24,6 @@ namespace UniSkin
         [SerializeField]
         private StyleState[] _styleStates;
 
-        public ElementStyle() { }
         public ElementStyle(string name, int fontSize, FontStyle fontStyle, StyleState[] styleStates)
         {
             _name = name;

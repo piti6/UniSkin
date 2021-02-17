@@ -9,14 +9,6 @@ namespace UniSkin
 {
     public static class SkinRenderer
     {
-        private static readonly HashSet<string> PanelNames = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
-        {
-            "Inspector",
-            "Hierarchy",
-            "Project",
-            "Console",
-        };
-
         public static Action<EditorWindow> OnWindowDispose = editorWindow => { };
 
         private static readonly Dictionary<string, GUIStyle> _cachedOriginalStyles = new Dictionary<string, GUIStyle>();
@@ -35,6 +27,13 @@ namespace UniSkin
                 if (skin.WindowStyles.TryGetValue(title, out var windowStyle))
                 {
                     ApplySkin(skin, windowStyle);
+
+                    if (!string.IsNullOrEmpty(windowStyle.CustomBackgroundTextureId))
+                    {
+                        if (!skin.Textures.TryGetValue(windowStyle.CustomBackgroundTextureId, out var serializableTexture) || !serializableTexture.IsValid) return;
+
+                        GUI.DrawTexture(guiContainer.contentRect, serializableTexture.Texture, ScaleMode.ScaleAndCrop);
+                    }
                 }
                 else
                 {

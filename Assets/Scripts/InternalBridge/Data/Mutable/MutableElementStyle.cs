@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace UniSkin
 {
-    public class MutableElementStyle
+    internal class MutableElementStyle
     {
         public string Name { get; set; }
         public int FontSize { get; set; }

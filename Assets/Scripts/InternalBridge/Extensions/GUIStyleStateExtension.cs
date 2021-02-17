@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace UniSkin
 {
-    public static class GUIStyleStateExtension
+    internal static class GUIStyleStateExtension
     {
         public static StyleState ToStyleState(this GUIStyleState guiStyleState, StyleStateType stateType)
         {

@@ -1,6 +1,6 @@
 namespace UniSkin
 {
-    public enum BackgroundType
+    internal enum BackgroundType
     {
         Texture,
         Color

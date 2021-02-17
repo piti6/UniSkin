@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace UniSkin
 {
-    public static class EnumUtility
+    internal static class EnumUtility
     {
         public static IEnumerable<T> GetValues<T>()
         {

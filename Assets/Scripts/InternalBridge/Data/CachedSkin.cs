@@ -1,13 +1,11 @@
-using System;
 using UnityEditor;
 using UnityEngine;
 
 namespace UniSkin
 {
     [FilePath("cachedSkin", FilePathAttribute.Location.PreferencesFolder)]
-    public class CachedSkin : ScriptableSingleton<CachedSkin>
+    internal class CachedSkin : ScriptableSingleton<CachedSkin>
     {
-        public static Action OnUpdated = () => { };
         public static Skin Skin
         {
             get
@@ -37,7 +35,6 @@ namespace UniSkin
             {
                 instance._skin = skin;
                 _dirty = true;
-                OnUpdated.Invoke();
 
                 return true;
             }

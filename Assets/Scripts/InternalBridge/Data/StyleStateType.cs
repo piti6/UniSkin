@@ -1,6 +1,6 @@
 namespace UniSkin
 {
-    public enum StyleStateType
+    internal enum StyleStateType
     {
         Normal,
         Hover,

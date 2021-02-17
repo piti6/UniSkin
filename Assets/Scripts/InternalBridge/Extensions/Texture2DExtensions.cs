@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace UniSkin
 {
-    public static class Texture2DExtensions
+    internal static class Texture2DExtensions
     {
         public static Texture2D MakeReadable(this Texture2D source)
         {

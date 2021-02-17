@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace UniSkin
 {
-    public static class GUIStyleExtensions
+    internal static class GUIStyleExtensions
     {
         public static IEnumerable<(StyleStateType StyleStateType, GUIStyleState StyleState)> AsStyleStateEnumerable(this GUIStyle style)
         {

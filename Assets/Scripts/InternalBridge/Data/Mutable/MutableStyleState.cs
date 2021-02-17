@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace UniSkin
 {
-    public class MutableStyleState
+    internal class MutableStyleState
     {
         public StyleStateType StateType { get; }
         public BackgroundType BackgroundType { get; set; }

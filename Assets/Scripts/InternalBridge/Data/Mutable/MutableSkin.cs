@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace UniSkin
 {
-    public class MutableSkin
+    internal class MutableSkin
     {
         public string Id { get; }
         public string Name { get; set; }

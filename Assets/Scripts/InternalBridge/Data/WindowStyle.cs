@@ -6,9 +6,10 @@ using UnityEngine;
 namespace UniSkin
 {
     [Serializable]
-    public class WindowStyle
+    internal class WindowStyle
     {
         public string Name => _name;
+        public string CustomBackgroundTextureId => _customBackgroundTextureId;
         public IReadOnlyDictionary<string, ElementStyle> ElementStyles => _elementStyleDictionary ?? (_elementStyleDictionary = _elementStyles.ToDictionary(x => x.Name));
 
         private IReadOnlyDictionary<string, ElementStyle> _elementStyleDictionary;
@@ -16,12 +17,14 @@ namespace UniSkin
         [SerializeField]
         private string _name;
         [SerializeField]
+        private string _customBackgroundTextureId;
+        [SerializeField]
         private ElementStyle[] _elementStyles;
 
-        public WindowStyle() { }
-        public WindowStyle(string name, ElementStyle[] elementStyles)
+        public WindowStyle(string name, string customBackgroundTextureId, ElementStyle[] elementStyles)
         {
             _name = name;
+            _customBackgroundTextureId = customBackgroundTextureId;
             _elementStyles = elementStyles;
         }
     }

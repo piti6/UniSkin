@@ -6,7 +6,7 @@ using UnityEngine;
 namespace UniSkin
 {
     [Serializable]
-    public class Skin
+    internal class Skin
     {
         private static readonly Lazy<Skin> m_default = new Lazy<Skin>(() => new Skin(string.Empty, "Default", Array.Empty<SerializableTexture2D>(), Array.Empty<WindowStyle>()));
         public static Skin Default => m_default.Value;
@@ -28,7 +28,6 @@ namespace UniSkin
         [SerializeField]
         private WindowStyle[] m_windowStyles;
 
-        public Skin() { }
         public Skin(string id, string name, SerializableTexture2D[] textures, WindowStyle[] windowStyles)
         {
             m_id = id;

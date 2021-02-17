@@ -4,7 +4,7 @@ using UnityEngine;
 namespace UniSkin
 {
     [Serializable]
-    public class StyleState
+    internal class StyleState
     {
         public StyleStateType StateType => _stateType;
         public BackgroundType BackgroundType => _backgroundType;
