@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace UniSkin.UI
 {
-    internal class InspectViewDrawer
+    internal class InstructionStyleView
     {
         public readonly struct Entity
         {
@@ -31,6 +31,7 @@ namespace UniSkin.UI
         }
 
         public event Action<bool, PropertyModifyData> OnPropertyModify = (colorChanged, modifyData) => { };
+        public event Action<string, SerializableTexture2D> OnChangeCustomBackground = (id, texture) => { };
         public event Action<bool, int> OnSelectInstruction = (selected, index) => { };
 
         private readonly SplitterState _instructionListDetailSplitter = new SplitterState(new float[] { 30, 70 }, new int[] { 32, 32 }, null);
@@ -46,46 +47,76 @@ namespace UniSkin.UI
 
         public void Draw(Entity entity)
         {
+            using (new GUILayout.HorizontalScope())
+            {
+                DrawCurrentInspectViewBackgroundTexture(entity);
+            }
+
             var rect = GUILayoutUtility.GetLastRect();
+
             SplitterGUILayout.BeginHorizontalSplit(_instructionListDetailSplitter);
 
             DrawInstructionList(entity.InstructionData);
 
-            EditorGUILayout.BeginVertical();
+            using (new EditorGUILayout.VerticalScope())
             {
                 DrawSelectedInstructionDetails(entity);
             }
-            EditorGUILayout.EndVertical();
 
             SplitterGUILayout.EndHorizontalSplit();
 
             EditorGUIUtility.DrawHorizontalSplitter(new Rect(_instructionListDetailSplitter.realSizes[0] + 1, rect.y, 1, rect.y + entity.WindowHeight - rect.height));
         }
 
-        private void DrawInstructionList(IReadOnlyList<(GUIStyle UsedGUIStyle, IEnumerable<Rect> Rects)> instructionData)
+        private void DrawCurrentInspectViewBackgroundTexture(Entity entity)
         {
-            var evt = Event.current;
-            _listViewState.totalRows = instructionData.Count;
+            var windowStyle = entity.CurrentWindowStyle;
 
-            EditorGUILayout.BeginVertical(GUIViewDebuggerWindow.Styles.listBackgroundStyle);
-            GUILayout.Label("Instructions");
+            entity.Textures.TryGetValue(windowStyle.CustomBackgroundId ?? string.Empty, out var customBackgroundTexture);
 
-            foreach (var element in ListViewGUI.ListView(_listViewState, GUIViewDebuggerWindow.Styles.listBackgroundStyle))
+            var currentCustomBackgroundTexture = customBackgroundTexture?.Texture;
+            var selectedCustomBackgroundTextureObject = EditorGUILayout.ObjectField("BackgroundTexture", currentCustomBackgroundTexture, typeof(Texture2D), allowSceneObjects: false, GUILayout.ExpandWidth(true));
+            var selectedCustomBackgroundTexture = selectedCustomBackgroundTextureObject as Texture2D;
+            if (currentCustomBackgroundTexture != selectedCustomBackgroundTexture)
             {
-                var listViewElement = (ListViewElement)element;
-                var currentRowIndex = listViewElement.row;
-
-                if (evt.type == EventType.Repaint && currentRowIndex < instructionData.Count)
+                if (selectedCustomBackgroundTexture is Texture2D)
                 {
-                    var isSelecting = _listViewState.row == currentRowIndex;
-                    var tempContent = GUIContentUtility.UseCached($"{currentRowIndex}. {instructionData[currentRowIndex].UsedGUIStyle.name}");
+                    var serializableTexture2D = selectedCustomBackgroundTexture.ToSerializableTexture2D();
 
-                    GUIViewDebuggerWindow.Styles.listItemBackground.Draw(listViewElement.position, false, false, isSelecting, false);
-
-                    GUIViewDebuggerWindow.Styles.listItem.Draw(listViewElement.position, tempContent, GUIUtility.GetControlID(FocusType.Keyboard), isSelecting);
+                    OnChangeCustomBackground.Invoke(serializableTexture2D.Id, serializableTexture2D);
+                }
+                else
+                {
+                    OnChangeCustomBackground.Invoke(string.Empty, default);
                 }
             }
-            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawInstructionList(IReadOnlyList<(GUIStyle UsedGUIStyle, IEnumerable<Rect> Rects)> instructionData)
+        {
+            using (new EditorGUILayout.VerticalScope(GUIViewDebuggerWindow.Styles.listBackgroundStyle))
+            {
+                var evt = Event.current;
+                _listViewState.totalRows = instructionData.Count;
+
+                GUILayout.Label("Instructions");
+
+                foreach (var element in ListViewGUI.ListView(_listViewState, GUIViewDebuggerWindow.Styles.listBackgroundStyle))
+                {
+                    var listViewElement = (ListViewElement)element;
+                    var currentRowIndex = listViewElement.row;
+
+                    if (evt.type == EventType.Repaint && currentRowIndex < instructionData.Count)
+                    {
+                        var isSelecting = _listViewState.row == currentRowIndex;
+                        var tempContent = GUIContentUtility.UseCached($"{currentRowIndex}. {instructionData[currentRowIndex].UsedGUIStyle.name}");
+
+                        GUIViewDebuggerWindow.Styles.listItemBackground.Draw(listViewElement.position, false, false, isSelecting, false);
+
+                        GUIViewDebuggerWindow.Styles.listItem.Draw(listViewElement.position, tempContent, GUIUtility.GetControlID(FocusType.Keyboard), isSelecting);
+                    }
+                }
+            }
         }
 
         private void DrawSelectedInstructionDetails(Entity entity)
