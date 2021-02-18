@@ -31,7 +31,7 @@ namespace UniSkin.UI
         }
 
         public event Action<bool, PropertyModifyData> OnPropertyModify = (colorChanged, modifyData) => { };
-        public event Action<string, SerializableTexture2D> OnChangeCustomBackground = (id, texture) => { };
+        public event Action<bool, string, SerializableTexture2D> OnChangeCustomBackground = (primary, id, texture) => { };
         public event Action<bool, int> OnSelectInstruction = (selected, index) => { };
 
         private readonly SplitterState _instructionListDetailSplitter = new SplitterState(new float[] { 30, 70 }, new int[] { 32, 32 }, null);
@@ -47,9 +47,10 @@ namespace UniSkin.UI
 
         public void Draw(Entity entity)
         {
-            using (new GUILayout.HorizontalScope())
+            using (new GUILayout.HorizontalScope(EditorStyles.objectField))
             {
-                DrawCurrentInspectViewBackgroundTexture(entity);
+                DrawCurrentInspectViewBackgroundTexture(entity, primary: true);
+                DrawCurrentInspectViewBackgroundTexture(entity, primary: false);
             }
 
             var rect = GUILayoutUtility.GetLastRect();
@@ -65,17 +66,17 @@ namespace UniSkin.UI
 
             SplitterGUILayout.EndHorizontalSplit();
 
-            EditorGUIUtility.DrawHorizontalSplitter(new Rect(_instructionListDetailSplitter.realSizes[0] + 1, rect.y, 1, rect.y + entity.WindowHeight - rect.height));
+            EditorGUIUtility.DrawHorizontalSplitter(new Rect(_instructionListDetailSplitter.realSizes[0] + 1, rect.y + rect.height, 1, entity.WindowHeight - rect.height));
         }
 
-        private void DrawCurrentInspectViewBackgroundTexture(Entity entity)
+        private void DrawCurrentInspectViewBackgroundTexture(Entity entity, bool primary)
         {
             var windowStyle = entity.CurrentWindowStyle;
-
-            entity.Textures.TryGetValue(windowStyle.CustomBackgroundId ?? string.Empty, out var customBackgroundTexture);
+            var textureId = primary ? windowStyle.CustomBackgroundId : windowStyle.CustomBackgroundId2;
+            entity.Textures.TryGetValue(textureId ?? string.Empty, out var customBackgroundTexture);
 
             var currentCustomBackgroundTexture = customBackgroundTexture?.Texture;
-            var selectedCustomBackgroundTextureObject = EditorGUILayout.ObjectField("BackgroundTexture", currentCustomBackgroundTexture, typeof(Texture2D), allowSceneObjects: false, GUILayout.ExpandWidth(true));
+            var selectedCustomBackgroundTextureObject = EditorGUILayout.ObjectField(primary ? "BackgroundTexture" : "BackgroundTexture2", currentCustomBackgroundTexture, typeof(Texture2D), allowSceneObjects: false, GUILayout.ExpandWidth(true));
             var selectedCustomBackgroundTexture = selectedCustomBackgroundTextureObject as Texture2D;
             if (currentCustomBackgroundTexture != selectedCustomBackgroundTexture)
             {
@@ -83,11 +84,11 @@ namespace UniSkin.UI
                 {
                     var serializableTexture2D = selectedCustomBackgroundTexture.ToSerializableTexture2D();
 
-                    OnChangeCustomBackground.Invoke(serializableTexture2D.Id, serializableTexture2D);
+                    OnChangeCustomBackground.Invoke(primary, serializableTexture2D.Id, serializableTexture2D);
                 }
                 else
                 {
-                    OnChangeCustomBackground.Invoke(string.Empty, default);
+                    OnChangeCustomBackground.Invoke(primary, string.Empty, default);
                 }
             }
         }

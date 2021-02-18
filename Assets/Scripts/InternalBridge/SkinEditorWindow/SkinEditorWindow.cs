@@ -66,10 +66,17 @@ namespace UniSkin.UI
             GUIViewDebuggerHelper.onViewInstructionsChanged += OnViewInstructionsChanged;
         }
 
-        private void OnChangeCustomBackground(string id, SerializableTexture2D texture)
+        private void OnChangeCustomBackground(bool primary, string id, SerializableTexture2D texture)
         {
             var currentWindowStyle = GetOrCreateCurrentInspectedWindowStyle();
-            currentWindowStyle.CustomBackgroundId = id;
+            if (primary)
+            {
+                currentWindowStyle.CustomBackgroundId = id;
+            }
+            else
+            {
+                currentWindowStyle.CustomBackgroundId2 = id;
+            }
 
             if (texture is SerializableTexture2D serializableTexture2D)
             {
@@ -273,7 +280,7 @@ namespace UniSkin.UI
             var inspectedViewName = _inspectedViewChunk.InspectedView.GetViewTitleName();
             if (!_currentSkin.WindowStyles.TryGetValue(inspectedViewName, out var windowStyle))
             {
-                _currentSkin.WindowStyles[inspectedViewName] = windowStyle = new MutableWindowStyle(inspectedViewName, string.Empty, Array.Empty<ElementStyle>());
+                _currentSkin.WindowStyles[inspectedViewName] = windowStyle = new MutableWindowStyle(inspectedViewName, string.Empty, string.Empty, Array.Empty<ElementStyle>());
             }
 
             return windowStyle;

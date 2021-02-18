@@ -30,12 +30,8 @@ namespace UniSkin
                 {
                     ApplySkin(skin, windowStyle);
 
-                    if (!string.IsNullOrEmpty(windowStyle.CustomBackgroundTextureId))
-                    {
-                        if (!skin.Textures.TryGetValue(windowStyle.CustomBackgroundTextureId, out var serializableTexture) || !serializableTexture.IsValid) return;
-
-                        GUI.DrawTexture(guiContainer.contentRect, serializableTexture.Texture, ScaleMode.ScaleAndCrop);
-                    }
+                    DrawTexture(windowStyle.CustomBackgroundTextureId, guiContainer.contentRect, skin.Textures);
+                    DrawTexture(windowStyle.CustomBackgroundTextureId2, guiContainer.contentRect, skin.Textures);
                 }
                 else
                 {
@@ -46,6 +42,16 @@ namespace UniSkin
             };
 
             return true;
+        }
+
+        private static void DrawTexture(string textureId, Rect contentRect, IReadOnlyDictionary<string, SerializableTexture2D> textures)
+        {
+            if (!string.IsNullOrEmpty(textureId))
+            {
+                if (!textures.TryGetValue(textureId, out var serializableTexture) || !serializableTexture.IsValid) return;
+
+                GUI.DrawTexture(contentRect, serializableTexture.Texture, ScaleMode.ScaleAndCrop);
+            }
         }
 
         private static void ApplySkin(Skin skin, WindowStyle windowStyle)
