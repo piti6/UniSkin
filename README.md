@@ -7,6 +7,9 @@
 
 Make your custom editor skin with UniSkin :)
 
+#### Currently UniSkin is in preview.
+#### Preview version may contain: Major bugs, and does not guarantee stable behavior.
+
 ## Features
 
 wip
