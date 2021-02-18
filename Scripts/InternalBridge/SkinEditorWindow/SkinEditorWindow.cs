@@ -5,11 +5,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-#if UNITY_2019_1_OR_NEWER
-#else
-using UnityEngine.Experimental.UIElements;
-#endif
-
 namespace UniSkin.UI
 {
     internal class SkinEditorWindow : EditorWindow
@@ -84,7 +79,6 @@ namespace UniSkin.UI
             }
 
             hasUnsavedChanges = true;
-            RemoveUnusedTextures();
             UpdateCachedSkin(true);
             _inspectedViewChunk.InspectedView.Repaint();
         }
@@ -191,8 +185,6 @@ namespace UniSkin.UI
                 _currentSkin.Textures[addedTexture.Id] = addedTexture;
             }
 
-            RemoveUnusedTextures();
-
             hasUnsavedChanges = true;
 
             var recordUndo = false;
@@ -212,19 +204,30 @@ namespace UniSkin.UI
             _inspectedViewChunk.InspectedView?.Repaint();
         }
 
-        private void RemoveUnusedTextures()
+        private readonly List<string> _disposeTargetKeys = new List<string>();
+
+        private void RemoveUnusedTextures(MutableSkin targetSkin)
         {
-            // Remove Unused textures
-            var wholeTextureIds = _currentSkin.WindowStyles.Values
+            var customBackgroundTextureIds = targetSkin.WindowStyles.Values
+                .SelectMany(x => x.CustomBackgroundIds());
+
+            var styleBackgroundTextureIds = targetSkin.WindowStyles.Values
                 .SelectMany(x => x.ElementStyles.Values)
                 .SelectMany(x => x.StyleStates.Values)
-                .Select(x => x.BackgroundTextureId)
-                .Distinct();
+                .Select(x => x.BackgroundTextureId);
 
-            foreach (var textureId in wholeTextureIds.Where(x => !string.IsNullOrEmpty(x)).Where(x => !_currentSkin.Textures.ContainsKey(x)))
+            var wholeTextureIds = new HashSet<string>(Enumerable.Concat(customBackgroundTextureIds, styleBackgroundTextureIds));
+
+            var disposableTargets = targetSkin.Textures.Keys.Where(x => !wholeTextureIds.Contains(x));
+
+            _disposeTargetKeys.AddRange(disposableTargets);
+
+            foreach (var disposeTargetKey in _disposeTargetKeys)
             {
-                _currentSkin.Textures.Remove(textureId);
+                targetSkin.Textures.Remove(disposeTargetKey);
             }
+
+            _disposeTargetKeys.Clear();
         }
 
         private double _lastColorChangedSeconds;
@@ -311,19 +314,24 @@ namespace UniSkin.UI
 #if UNITY_2020_2_OR_NEWER
         public override void SaveChanges()
         {
-            Save(_currentSkin.ToImmutable(grantNewId: false));
+            Save(_currentSkin);
         }
 #else
-        public void SaveChanges()
+        private void SaveChanges()
         {
-            Save(_currentSkin.ToImmutable(grantNewId: false));
+            Save(_currentSkin);
         }
 #endif
 
+        private void Save(MutableSkin skin)
+        {
+            RemoveUnusedTextures(skin);
+
+            Save(skin.ToImmutable(grantNewId: false));
+        }
+
         private void Save(Skin skin)
         {
-            Undo.RecordObject(CachedSkin.instance, "CachedSkin");
-
             CachedSkin.Update(skin);
             CachedSkin.Save();
 
@@ -357,10 +365,21 @@ namespace UniSkin.UI
 
             GUIViewDebuggerHelper.onViewInstructionsChanged -= OnViewInstructionsChanged;
 
+#if !UNITY_2020_2_OR_NEWER
+            if (hasUnsavedChanges && EditorUtility.DisplayDialog("Warning", saveChangesMessage, "Yes", "No"))
+            {
+                SaveChanges();
+            }
+            else
+            {
+                Save(_currentOriginalSkin);
+            }
+#else
             if (hasUnsavedChanges)
             {
                 Save(_currentOriginalSkin);
             }
+#endif
         }
     }
 }

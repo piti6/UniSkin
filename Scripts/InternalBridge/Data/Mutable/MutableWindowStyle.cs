@@ -6,6 +6,13 @@ namespace UniSkin
     internal class MutableWindowStyle
     {
         public string Name { get; set; }
+
+        public IEnumerable<string> CustomBackgroundIds()
+        {
+            yield return CustomBackgroundId;
+            yield return CustomBackgroundId2;
+        }
+
         public string CustomBackgroundId { get; set; }
         public string CustomBackgroundId2 { get; set; }
         public Dictionary<string, MutableElementStyle> ElementStyles { get; set; }
