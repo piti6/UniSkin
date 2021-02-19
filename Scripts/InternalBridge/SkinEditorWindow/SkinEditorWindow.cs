@@ -42,7 +42,7 @@ namespace UniSkin.UI
         {
             UpdateCurrentSkin(CachedSkin.Skin);
 
-            Undo.undoRedoPerformed += UndoRedoPerformed ;
+            Undo.undoRedoPerformed += UndoRedoPerformed;
             _inspectedViewChunk.OnViewChanged += OnViewChanged;
 
             _skinMenuView.OnChangeName += OnChangeName;
