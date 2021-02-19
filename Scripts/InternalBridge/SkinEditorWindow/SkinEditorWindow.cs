@@ -42,7 +42,7 @@ namespace UniSkin.UI
         {
             UpdateCurrentSkin(CachedSkin.Skin);
 
-            Undo.selectionUndoRedoPerformed += UndoRedoPerformed;
+            Undo.undoRedoPerformed += UndoRedoPerformed;
             _inspectedViewChunk.OnViewChanged += OnViewChanged;
 
             _skinMenuView.OnChangeName += OnChangeName;
@@ -235,7 +235,7 @@ namespace UniSkin.UI
         {
             if (recordUndo)
             {
-                Undo.RecordObject(CachedSkin.instance, "CachedSkin");
+                Undo.RegisterCreatedObjectUndo(CachedSkin.instance, "CachedSkin");
             }
 
             CachedSkin.Update(_currentSkin.ToImmutable(grantNewId: false));
@@ -298,11 +298,13 @@ namespace UniSkin.UI
             _inspectedViewChunk.ChangeInspectionValue(selected >= 0 ? selectableViews[selected] : null);
         }
 
-        private void UndoRedoPerformed(Undo.UndoRedoType obj)
+        private void UndoRedoPerformed()
         {
             UpdateCurrentSkin(CachedSkin.Skin);
 
             Repaint();
+
+            _inspectedViewChunk.InspectedView.Repaint();
         }
 
         private void UpdateCurrentSkin(Skin targetSkin)
@@ -347,7 +349,7 @@ namespace UniSkin.UI
         {
             _highlighter.ClearHighlighters();
 
-            Undo.selectionUndoRedoPerformed -= UndoRedoPerformed;
+            Undo.undoRedoPerformed -= UndoRedoPerformed;
             _inspectedViewChunk.OnViewChanged -= OnViewChanged;
 
             _skinMenuView.OnChangeName -= OnChangeName;

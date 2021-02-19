@@ -34,6 +34,7 @@ namespace UniSkin
             else
             {
                 instance._skin = skin;
+                EditorUtility.SetDirty(instance);
                 _dirty = true;
 
                 return true;
