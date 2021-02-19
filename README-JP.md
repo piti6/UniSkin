@@ -41,7 +41,7 @@
 - 自動インストール
   - Unity上部メニューの Window -> Package Managerを選択
   - 左上の「+」ボタンを押し、「Add package from git URL」項目を選択
-  - 「https://github.com/piti6/UniSkin.git」を入力し、Addボタン選択
+  - https://github.com/piti6/UniSkin.git を入力し、Addボタン選択
 - 手動インストール
   - 次をmanifest.jsonのdependencies以下に記入
 `"space.mkim.uniskin": "https://github.com/piti6/UniSkin.git"`
