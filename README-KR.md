@@ -41,7 +41,7 @@ UniSkin과 함께 당신만의 유니티를 만들어보세요  :)
 - 자동 설치
   - 유니티 상부 메뉴에서, Window -> Package Manager를 선택 해 주세요.
   - Package Manager의 왼쪽위에 위치한 +버튼을 눌러,「Add package from git URL」메뉴를 선택 해 주세요.
-  - 「https://github.com/piti6/UniSkin.git」을 입력하고 Add버튼을 눌러주세요.
+  - https://github.com/piti6/UniSkin.git 을 입력하고 Add버튼을 눌러주세요.
 - 수동 설치
   - manifest.json파일을 편집기로 열고, dependencies이하에
 `"space.mkim.uniskin": "https://github.com/piti6/UniSkin.git"` 를 기입해 주세요.

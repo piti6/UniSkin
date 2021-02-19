@@ -44,7 +44,7 @@ Make your custom editor skin with UniSkin :)
 - Automatic
   - Open Package Manager Window at Unity menu Window -> Package Manager
   - Select「Add package from git URL」menu at the left top button
-  - Type 「https://github.com/piti6/UniSkin.git」 and hit Add button
+  - Type https://github.com/piti6/UniSkin.git and hit Add button
 - Manual
   - Include next line inside of manifest.json dependencies.
 `"space.mkim.uniskin": "https://github.com/piti6/UniSkin.git"`
