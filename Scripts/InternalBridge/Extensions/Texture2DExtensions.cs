@@ -4,19 +4,19 @@ namespace UniSkin
 {
     internal static class Texture2DExtensions
     {
-        public static Texture2D MakeReadable(this Texture2D source)
+        public static Texture2D ToDecompressedTexture(this Texture2D source)
         {
-            if (source == null || source.isReadable)
-            {
-                return source;
-            }
-            else
-            {
-                var newTexture2D = new Texture2D(source.width, source.height, source.format, source.mipmapCount, source);
-                Graphics.CopyTexture(source, newTexture2D);
+            var renderTexture = RenderTexture.GetTemporary(source.width, source.height);
 
-                return newTexture2D;
-            }
+            Graphics.Blit(source, renderTexture);
+
+            var readableTexture = new Texture2D(source.width, source.height);
+            readableTexture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+            readableTexture.Apply();
+
+            RenderTexture.ReleaseTemporary(renderTexture);
+
+            return readableTexture;
         }
 
         public static string ToTextureId(this Texture2D source)
